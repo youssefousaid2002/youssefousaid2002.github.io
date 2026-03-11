@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memory System</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#1a1a2e;min-height:100vh}
+.header{background:linear-gradient(135deg,#16213e,#0f3460);color:white;padding:20px 30px;display:flex;align-items:center;gap:15px}
+.header h1{font-size:22px}.header p{font-size:12px;opacity:.7;margin-top:3px}
+.nav{background:#0f3460;display:flex;padding:0 20px;flex-wrap:wrap}
+.nav button{padding:12px 18px;border:none;background:none;color:#aaa;cursor:pointer;font-size:14px;border-bottom:3px solid transparent}
+.nav button.active{color:#e94560;border-bottom-color:#e94560;font-weight:bold}
+.main{max-width:900px;margin:25px auto;padding:0 15px}
+.page{display:none}.page.active{display:block}
+.card{background:white;border-radius:10px;padding:22px;margin-bottom:18px;box-shadow:0 3px 10px rgba(0,0,0,.2)}
+.card h2{color:#0f3460;margin-bottom:14px;font-size:17px}
+label{font-size:13px;color:#555;font-weight:bold;display:block;margin:12px 0 5px}
+input,textarea,select{width:100%;padding:10px 13px;border:2px solid #e0e0e0;border-radius:7px;font-size:14px;font-family:Arial;background:#fafafa}
+input:focus,textarea:focus{outline:none;border-color:#e94560;background:white}
+textarea{resize:vertical;min-height:85px}
+.btn{padding:10px 20px;border:none;border-radius:7px;cursor:pointer;font-size:14px;font-weight:bold}
+.btn-red{background:#e94560;color:white}.btn-green{background:#27ae60;color:white}
+.btn-gray{background:#bdc3c7;color:#333}.btn-sm{padding:6px 13px;font-size:12px}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:20px}
+.stat-box{background:white;border-radius:10px;padding:16px;text-align:center;box-shadow:0 3px 10px rgba(0,0,0,.2)}
+.stat-num{font-size:30px;font-weight:bold;color:#e94560}.stat-lbl{font-size:11px;color:#888;margin-top:3px}
+.lesson-item{background:white;border-radius:10px;padding:16px 20px;margin-bottom:11px;box-shadow:0 2px 8px rgba(0,0,0,.15);display:flex;align-items:center;gap:13px}
+.lesson-info{flex:1}.lesson-title{font-weight:bold;font-size:15px;color:#222}
+.lesson-sub{font-size:12px;color:#888;margin-top:2px}.lesson-meta{font-size:12px;margin-top:5px}
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:bold;margin-right:4px}
+.b-red{background:#fde8e8;color:#e94560}.b-orange{background:#fef3e2;color:#e67e22}
+.b-yellow{background:#fefde2;color:#b7950b}.b-green{background:#e9f7ef;color:#27ae60}
+.b-purple{background:#f4ecf7;color:#8e44ad}.b-blue{background:#eaf4fb;color:#2980b9}
+.tip-box{background:linear-gradient(135deg,#e94560,#c73652);color:white;border-radius:10px;padding:16px 20px;margin-bottom:18px}
+.tip-box h3{margin-bottom:5px;font-size:14px}.tip-box p{font-size:13px;opacity:.9;line-height:1.6}
+.flip-card{background:linear-gradient(135deg,#0f3460,#16213e);border-radius:14px;padding:45px 35px;text-align:center;color:white;min-height:210px;display:flex;flex-direction:column;justify-content:center;cursor:pointer;margin-bottom:18px;box-shadow:0 8px 25px rgba(0,0,0,.3)}
+.flip-lbl{font-size:11px;opacity:.6;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px}
+.flip-q{font-size:21px;font-weight:bold;line-height:1.4}
+.flip-content{font-size:14px;margin-top:12px;opacity:.85}
+.flip-ans{font-size:17px;margin-top:18px;background:rgba(255,255,255,.12);padding:14px;border-radius:8px;display:none}
+.flip-ans.show{display:block}.flip-hint{font-size:12px;opacity:.45;margin-top:13px}
+.study-btns{display:flex;gap:12px;margin-bottom:16px}
+.study-btns button{flex:1;padding:13px;font-size:15px}
+.prog-wrap{background:#ddd;border-radius:10px;height:7px;margin-bottom:9px}
+.prog-bar{height:7px;background:#e94560;border-radius:10px;transition:width .4s}
+.steps{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:14px}
+.step{background:#f8f9fa;border-radius:10px;padding:13px;text-align:center;border-top:4px solid}
+.step .sn{font-size:21px;font-weight:bold}.step .sl{font-size:12px;font-weight:bold;margin:4px 0}
+.step .sd{font-size:11px;color:#888}
+.step:nth-child(1){border-color:#e94560}.step:nth-child(2){border-color:#e67e22}
+.step:nth-child(3){border-color:#f1c40f}.step:nth-child(4){border-color:#27ae60}
+.step:nth-child(5){border-color:#8e44ad}
+.empty{text-align:center;padding:45px 20px;color:#aaa}
+.empty-icon{font-size:48px;margin-bottom:13px}
+
+/* ── CALENDAR GRID SCHEDULE ── */
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.cal-nav h3{color:#0f3460;font-size:18px}
+.cal-nav button{background:#0f3460;color:white;border:none;border-radius:7px;padding:7px 16px;cursor:pointer;font-size:15px;font-weight:bold}
+.cal-nav button:hover{background:#e94560}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-dow{text-align:center;font-size:11px;font-weight:bold;color:#888;padding:6px 0;text-transform:uppercase}
+.cal-cell{background:white;border-radius:8px;min-height:90px;padding:6px;position:relative;border:2px solid transparent;box-shadow:0 1px 4px rgba(0,0,0,.08);transition:border .2s}
+.cal-cell.empty{background:transparent;box-shadow:none}
+.cal-cell.is-today{border-color:#e94560;background:#fff5f7}
+.cal-cell.is-past{background:#f9f9f9;opacity:.7}
+.cal-cell.has-items{cursor:pointer}.cal-cell.has-items:hover{border-color:#0f3460}
+.cal-day-num{font-size:13px;font-weight:bold;color:#333;margin-bottom:4px}
+.cal-cell.is-today .cal-day-num{background:#e94560;color:white;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px}
+.cal-dot-wrap{display:flex;flex-direction:column;gap:2px}
+.cal-dot{font-size:10px;padding:2px 5px;border-radius:4px;color:white;font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.cal-dot.lv1{background:#e94560}.cal-dot.lv2{background:#e67e22}.cal-dot.lv3{background:#b7950b}
+.cal-dot.lv4{background:#27ae60}.cal-dot.lv5{background:#8e44ad}.cal-dot.proj{background:#aaa}
+.cal-more{font-size:10px;color:#888;margin-top:2px}
+.cal-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;font-size:12px}
+.cal-legend span{display:flex;align-items:center;gap:4px}
+.leg-dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+/* Detail popup */
+.cal-popup{background:white;border-radius:10px;padding:18px;margin-top:14px;box-shadow:0 4px 16px rgba(0,0,0,.15);display:none}
+.cal-popup.show{display:block}
+.cal-popup h4{color:#0f3460;margin-bottom:10px;font-size:15px}
+.pop-row{padding:8px 0;border-bottom:1px solid #eee;font-size:13px;display:flex;align-items:center;gap:8px}
+.pop-row:last-child{border-bottom:none}
+.sbadge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:bold;color:white}
+.sbadge.lv1{background:#e94560}.sbadge.lv2{background:#e67e22}.sbadge.lv3{background:#b7950b}
+.sbadge.lv4{background:#27ae60}.sbadge.lv5{background:#8e44ad}
+.proj-label{font-size:11px;color:#aaa}
+
+/* ── ADD TO IPHONE BOX ── */
+.iphone-box{background:linear-gradient(135deg,#e9f7ef,#d5f5e3);border:2px solid #27ae60;border-radius:10px;padding:20px;margin-top:18px;text-align:center}
+.iphone-box h3{color:#1e8449;margin-bottom:8px;font-size:16px}
+.iphone-box p{color:#555;font-size:13px;margin-bottom:12px;line-height:1.6}
+.iphone-steps{text-align:left;font-size:13px;color:#444;line-height:2.2;margin:10px 0 16px;padding-left:4px}
+.btn-iphone{background:linear-gradient(135deg,#27ae60,#1e8449);color:white;border:none;border-radius:8px;padding:13px 28px;font-size:15px;font-weight:bold;cursor:pointer;box-shadow:0 4px 12px rgba(39,174,96,.3)}
+.btn-iphone:hover{background:linear-gradient(135deg,#1e8449,#176339)}
+
+/* ── USERS ── */
+.user-item{background:white;border-radius:10px;padding:16px 20px;margin-bottom:11px;box-shadow:0 2px 8px rgba(0,0,0,.15);display:flex;align-items:center;gap:13px;border:2px solid transparent}
+.user-item.active-user{border-color:#e94560;background:#fff5f7}
+.user-avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#0f3460,#e94560);display:flex;align-items:center;justify-content:center;color:white;font-size:18px;font-weight:bold;flex-shrink:0}
+.user-info{flex:1}.user-name{font-weight:bold;font-size:15px;color:#222}
+.user-stats{font-size:12px;color:#888;margin-top:3px}
+.user-active-badge{background:#e94560;color:white;font-size:11px;font-weight:bold;padding:3px 9px;border-radius:20px}
+
+@media(max-width:600px){.stats-row{grid-template-columns:repeat(2,1fr)}.steps{grid-template-columns:repeat(2,1fr)}.study-btns{flex-direction:column}}
+</style>
+</head>
+<body>
+
+<!-- USERNAME SCREEN -->
+<div id="user-screen" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#1a1a2e;z-index:9999;align-items:center;justify-content:center">
+  <div style="background:white;border-radius:16px;padding:40px 36px;max-width:420px;width:90%;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.4)">
+    <div style="font-size:52px;margin-bottom:12px">🧠</div>
+    <h2 style="color:#0f3460;margin-bottom:6px;font-size:22px">Welcome to Memory System</h2>
+    <p style="color:#888;font-size:13px;margin-bottom:24px">Enter your name to get your own personal space. Your data stays on your device and is completely separate from others.</p>
+    <input type="text" id="username-input" placeholder="Your name (e.g. Ahmed, Sara...)" style="width:100%;padding:12px 14px;border:2px solid #e0e0e0;border-radius:8px;font-size:15px;box-sizing:border-box;margin-bottom:14px" onkeydown="if(event.key==='Enter')startSession()">
+    <button onclick="startSession()" style="width:100%;padding:13px;background:#e94560;color:white;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer">🚀 Start My Session</button>
+    <div id="saved-users-wrap" style="margin-top:20px;display:none">
+      <p style="font-size:12px;color:#aaa;margin-bottom:8px">— or continue as —</p>
+      <div id="saved-users"></div>
+    </div>
+  </div>
+</div>
+
+<div class="header">
+  <div style="font-size:38px">🧠</div>
+  <div style="flex:1"><h1>Spaced Repetition Memory System</h1><p>Study smarter — memorize faster, never forget</p></div>
+  <div style="text-align:right">
+    <div id="header-user" style="font-size:13px;color:rgba(255,255,255,.8);margin-bottom:4px"></div>
+    <button onclick="switchUser()" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:white;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px">🔄 Switch User</button>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="active" onclick="goPage('dashboard',this)">📊 Dashboard</button>
+  <button onclick="goPage('add',this)">➕ Add Lesson</button>
+  <button onclick="goPage('study',this)">📖 Study Now</button>
+  <button onclick="goPage('schedule',this)">📅 Schedule</button>
+  <button onclick="goPage('manage',this)">🗂 Manage</button>
+  <button onclick="goPage('users',this)">👤 Users</button>
+  <button onclick="goPage('howto',this)">❓ How It Works</button>
+</div>
+
+<div class="main">
+
+  <!-- DASHBOARD -->
+  <div id="dashboard" class="page active">
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-num" id="s-total">0</div><div class="stat-lbl">Total Lessons</div></div>
+      <div class="stat-box"><div class="stat-num" id="s-today" style="color:#e94560">0</div><div class="stat-lbl">Due Today</div></div>
+      <div class="stat-box"><div class="stat-num" id="s-mastered" style="color:#27ae60">0</div><div class="stat-lbl">Mastered</div></div>
+      <div class="stat-box"><div class="stat-num" id="s-streak" style="color:#e67e22">0</div><div class="stat-lbl">Day Streak 🔥</div></div>
+    </div>
+    <div class="tip-box"><h3>💡 Today's Tip</h3><p id="daily-tip"></p></div>
+    <div class="card"><h2>📌 Lessons Due Today</h2><div id="due-list"></div></div>
+    <div class="card"><h2>📚 All Your Lessons</h2><div id="all-list"></div></div>
+  </div>
+
+  <!-- ADD LESSON -->
+  <div id="add" class="page">
+    <div class="card">
+      <h2>➕ Add a Lesson to Memorize</h2>
+      <label>Lesson Title</label>
+      <input type="text" id="inp-title" placeholder="e.g. The Water Cycle, Chapter 5 Vocabulary...">
+      <label>Subject / Topic</label>
+      <input type="text" id="inp-subject" placeholder="e.g. Biology, English, History...">
+      <label>Content / Key Points to Memorize</label>
+      <textarea id="inp-content" placeholder="Write the main idea, notes, or question you want to remember..."></textarea>
+      <label>Answer / What You Must Recall</label>
+      <textarea id="inp-answer" placeholder="Write the answer or key fact to recall when reviewing..."></textarea>
+      <label>📅 First Review Date <span style="font-weight:normal;color:#999">(leave empty = start today)</span></label>
+      <input type="date" id="inp-date">
+      <div style="margin-top:18px">
+        <button class="btn btn-red" onclick="addLesson()">➕ Add Lesson</button>
+        <button class="btn btn-gray" style="margin-left:10px" onclick="clearForm()">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STUDY -->
+  <div id="study" class="page">
+    <div id="study-content"></div>
+  </div>
+
+  <!-- SCHEDULE — calendar grid -->
+  <div id="schedule" class="page">
+    <div class="card">
+      <h2>📅 Your Review Calendar</h2>
+      <div class="cal-nav">
+        <button onclick="calMove(-1)">&#8249;</button>
+        <h3 id="cal-title"></h3>
+        <button onclick="calMove(1)">&#8250;</button>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div class="cal-legend">
+        <span><span class="leg-dot" style="background:#e94560"></span> Level 1</span>
+        <span><span class="leg-dot" style="background:#e67e22"></span> Level 2</span>
+        <span><span class="leg-dot" style="background:#b7950b"></span> Level 3</span>
+        <span><span class="leg-dot" style="background:#27ae60"></span> Level 4</span>
+        <span><span class="leg-dot" style="background:#8e44ad"></span> Level 5 / Mastered</span>
+        <span><span class="leg-dot" style="background:#aaa"></span> Projected</span>
+      </div>
+      <div class="cal-popup" id="cal-popup">
+        <h4 id="pop-date"></h4>
+        <div id="pop-list"></div>
+      </div>
+
+      <div class="iphone-box">
+        <h3>📱 Add to iPhone Calendar</h3>
+        <p>Download a calendar file (.ics) and open it on your iPhone to add all review reminders directly to your Apple Calendar app.</p>
+        <div class="iphone-steps">
+          1️⃣ Click <b>"Download Calendar File"</b> below<br>
+          2️⃣ Email the file to yourself OR save to iCloud Drive<br>
+          3️⃣ Open the file on your iPhone<br>
+          4️⃣ Tap <b>"Add All"</b> — done! ✅
+        </div>
+        <button class="btn-iphone" onclick="exportICS()">📥 Download Calendar File (.ics)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div id="howto" class="page">
+    <div class="card">
+      <h2>❓ How Spaced Repetition Works</h2>
+      <p style="color:#555;line-height:1.7;margin-top:10px">
+        <b>Spaced Repetition</b> is a scientifically proven technique. Instead of studying the same thing every day, you review it at the <b>perfect moment</b> — right before you forget it. This forces your brain to work hard each time, making the memory stronger and longer-lasting.
+      </p>
+      <div class="steps">
+        <div class="step"><div class="sn">1</div><div class="sl">🔴 Learning</div><div class="sd">Repeat in 1 day</div></div>
+        <div class="step"><div class="sn">2</div><div class="sl">🟠 Remembering</div><div class="sd">Repeat in 3 days</div></div>
+        <div class="step"><div class="sn">3</div><div class="sl">🟡 Familiar</div><div class="sd">Repeat in 1 week</div></div>
+        <div class="step"><div class="sn">4</div><div class="sl">🟢 Strong</div><div class="sd">Repeat in 2 weeks</div></div>
+        <div class="step"><div class="sn">5</div><div class="sl">🟣 Mastered</div><div class="sd">Repeat in 1 month</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>📋 How to Use This System</h2>
+      <ol style="line-height:2.2;color:#444;margin-left:20px;margin-top:10px">
+        <li>Click <b>"Add Lesson"</b> — write your lesson title, subject, and what to memorize</li>
+        <li>Click <b>"Study Now"</b> — read each lesson card carefully</li>
+        <li>Click the card to <b>reveal the answer</b></li>
+        <li>If you remembered → click <b>"I Remembered ✅"</b> — lesson moves to next level</li>
+        <li>If you forgot → click <b>"I Forgot ❌"</b> — lesson goes back to level 1</li>
+        <li>Check <b>"Schedule"</b> to see exactly when each lesson is due</li>
+        <li>Come back every day — your memory gets stronger each time!</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- MANAGE LESSONS -->
+  <div id="manage" class="page">
+    <div class="card">
+      <h2>🗂 Manage Your Lessons</h2>
+      <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+        <input type="text" id="manage-search" placeholder="🔍 Search lessons..." style="flex:1;min-width:180px" oninput="renderManage()">
+        <select id="manage-filter" onchange="renderManage()" style="width:160px">
+          <option value="all">All Levels</option>
+          <option value="1">🔴 Level 1</option>
+          <option value="2">🟠 Level 2</option>
+          <option value="3">🟡 Level 3</option>
+          <option value="4">🟢 Level 4</option>
+          <option value="5">🟣 Mastered</option>
+        </select>
+      </div>
+      <div id="manage-list"></div>
+    </div>
+    <!-- Edit Modal -->
+    <div id="edit-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:999;align-items:center;justify-content:center">
+      <div style="background:white;border-radius:12px;padding:28px;max-width:520px;width:90%;box-shadow:0 8px 30px rgba(0,0,0,.3)">
+        <h3 style="color:#0f3460;margin-bottom:16px;font-size:17px">✏️ Edit Lesson</h3>
+        <input type="hidden" id="edit-id">
+        <label style="font-size:13px;color:#555;font-weight:bold;display:block;margin-bottom:4px">Lesson Title</label>
+        <input type="text" id="edit-title" style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:7px;font-size:14px;margin-bottom:10px;box-sizing:border-box">
+        <label style="font-size:13px;color:#555;font-weight:bold;display:block;margin-bottom:4px">Subject</label>
+        <input type="text" id="edit-subject" style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:7px;font-size:14px;margin-bottom:10px;box-sizing:border-box">
+        <label style="font-size:13px;color:#555;font-weight:bold;display:block;margin-bottom:4px">Content</label>
+        <textarea id="edit-content" style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:7px;font-size:14px;min-height:70px;box-sizing:border-box;resize:vertical;margin-bottom:10px"></textarea>
+        <label style="font-size:13px;color:#555;font-weight:bold;display:block;margin-bottom:4px">Answer</label>
+        <textarea id="edit-answer" style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:7px;font-size:14px;min-height:70px;box-sizing:border-box;resize:vertical;margin-bottom:10px"></textarea>
+        <label style="font-size:13px;color:#555;font-weight:bold;display:block;margin-bottom:4px">📅 Next Review Date</label>
+        <input type="date" id="edit-date" style="width:100%;padding:10px;border:2px solid #e0e0e0;border-radius:7px;font-size:14px;margin-bottom:18px;box-sizing:border-box">
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-red" onclick="saveEdit()" style="flex:1">💾 Save Changes</button>
+          <button class="btn btn-gray" onclick="closeEdit()" style="flex:1">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- USERS -->
+  <div id="users" class="page">
+    <div class="card">
+      <h2>👤 Manage Users</h2>
+      <p style="color:#888;font-size:13px;margin-bottom:16px">Switch between users — each user has their own separate lessons and progress.</p>
+
+      <div style="display:flex;gap:10px;margin-bottom:18px">
+        <input type="text" id="new-username" placeholder="Enter new user name..." style="flex:1">
+        <button class="btn btn-red" onclick="addUser()">➕ Add User</button>
+      </div>
+      <div id="users-list"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const INTERVALS=[0,1,3,7,14,30];
+const TIPS=[
+  "Review your lessons every day — consistency beats cramming!",
+  "The harder recall feels, the stronger the memory becomes.",
+  "Short daily reviews are far more powerful than long study sessions.",
+  "After adding a lesson, come back tomorrow and test yourself.",
+  "Trust the schedule — it knows exactly when to review.",
+  "Break big topics into small lessons — one idea at a time.",
+  "Say answers out loud — speaking activates memory better than reading.",
+  "Visualize what you memorize — your brain loves images!"
+];
+
+let currentUser='';
+
+function getStorageKey(){return 'srs2_'+currentUser;}
+function getStreakKey(){return 'srs_sk_'+currentUser;}
+function getStreakDateKey(){return 'srs_sd_'+currentUser;}
+
+function getLessons(){return JSON.parse(localStorage.getItem(getStorageKey())||'[]')}
+function saveLessons(a){localStorage.setItem(getStorageKey(),JSON.stringify(a))}
+
+function startSession(){
+  let name=document.getElementById('username-input').value.trim();
+  if(!name){alert('Please enter your name!');return;}
+  loadUser(name);
+}
+
+function loadUser(name){
+  currentUser=name.toLowerCase().replace(/\s+/g,'_');
+  // Save to known users list
+  let users=JSON.parse(localStorage.getItem('srs_users')||'[]');
+  if(!users.includes(currentUser)) users.push(currentUser);
+  localStorage.setItem('srs_users',JSON.stringify(users));
+  localStorage.setItem('srs_lastuser',currentUser);
+  document.getElementById('header-user').textContent='👤 '+name;
+  document.getElementById('user-screen').style.display='none';
+  renderDashboard();
+}
+
+function switchUser(){
+  document.getElementById('username-input').value='';
+  showUserScreen();
+}
+
+function showUserScreen(){
+  let users=JSON.parse(localStorage.getItem('srs_users')||'[]');
+  let wrap=document.getElementById('saved-users-wrap');
+  let el=document.getElementById('saved-users');
+  if(users.length){
+    wrap.style.display='block';
+    el.innerHTML=users.map(u=>`<button onclick="loadUser('${u}')" style="margin:4px;padding:8px 16px;background:#eaf4fb;border:1px solid #2980b9;border-radius:20px;cursor:pointer;font-size:13px;color:#2980b9">👤 ${u}</button>`).join('');
+  } else {
+    wrap.style.display='none';
+  }
+  document.getElementById('user-screen').style.display='flex';
+}
+
+function today(){return new Date().toISOString().slice(0,10)}
+function addDays(n){let d=new Date();d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)}
+function isDue(l){return l.nextReview<=today()}
+function dayKey(d){return d.toISOString().split('T')[0]}
+function formatDate(d){return d.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}
+
+function getStreak(){
+  let s=parseInt(localStorage.getItem(getStreakKey())||'0');
+  let last=localStorage.getItem(getStreakDateKey());
+  if(last===today())return s;
+  let yd=new Date();yd.setDate(yd.getDate()-1);
+  if(last===yd.toISOString().slice(0,10))return s;
+  return 0;
+}
+function markStreak(){
+  if(localStorage.getItem(getStreakDateKey())===today())return;
+  let s=getStreak();
+  let yd=new Date();yd.setDate(yd.getDate()-1);
+  s=(localStorage.getItem(getStreakDateKey())===yd.toISOString().slice(0,10))?s+1:1;
+  localStorage.setItem(getStreakKey(),s);
+  localStorage.setItem(getStreakDateKey(),today());
+}
+
+function levelBadge(lv){
+  const L=['','🔴 Level 1','🟠 Level 2','🟡 Level 3','🟢 Level 4','🟣 Mastered'];
+  const C=['','b-red','b-orange','b-yellow','b-green','b-purple'];
+  return `<span class="badge ${C[lv]}">${L[lv]}</span>`;
+}
+
+function goPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='dashboard')renderDashboard();
+  if(id==='study')renderStudy();
+  if(id==='schedule')renderSchedule();
+  if(id==='manage')renderManage();
+  if(id==='users')renderUsers();
+}
+
+function renderUsers(){
+  let users=JSON.parse(localStorage.getItem('srs_users')||'[]');
+  let active=currentUser;
+  let el=document.getElementById('users-list');
+  if(!el)return;
+  if(!users.length){
+    el.innerHTML='<div class="empty"><div class="empty-icon">👤</div>No saved users yet.</div>';
+    return;
+  }
+  el.innerHTML=users.map(u=>{
+    let lessons=JSON.parse(localStorage.getItem('srs2_'+u)||'[]');
+    let mastered=lessons.filter(l=>l.level===5).length;
+    let isActive=u===active;
+    let displayName=u.replace(/_/g,' ');
+    return `<div class="user-item ${isActive?'active-user':''}">
+      <div class="user-avatar">${displayName.charAt(0).toUpperCase()}</div>
+      <div class="user-info">
+        <div class="user-name">${displayName} ${isActive?'<span class="user-active-badge">● Active</span>':''}</div>
+        <div class="user-stats">${lessons.length} lessons · ${mastered} mastered</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        ${!isActive?`<button class="btn btn-green btn-sm" onclick="loadUser('${u}')">Switch</button>`:'<span style="font-size:12px;color:#e94560;font-weight:bold">You</span>'}
+        <button class="btn btn-gray btn-sm" onclick="confirmDeleteUser('${u}')">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function confirmDeleteUser(u){
+  let displayName=u.replace(/_/g,' ');
+  if(!confirm('Delete user "'+displayName+'" and ALL their lessons? This cannot be undone.'))return;
+  let users=JSON.parse(localStorage.getItem('srs_users')||'[]').filter(x=>x!==u);
+  localStorage.setItem('srs_users',JSON.stringify(users));
+  localStorage.removeItem('srs2_'+u);
+  localStorage.removeItem('srs_sk_'+u);
+  localStorage.removeItem('srs_sd_'+u);
+  if(currentUser===u){
+    if(users.length>0)loadUser(users[0]);
+    else showUserScreen();
+  } else {
+    renderUsers();
+  }
+}
+
+function addLesson(){
+  let title=document.getElementById('inp-title').value.trim();
+  let subject=document.getElementById('inp-subject').value.trim();
+  let content=document.getElementById('inp-content').value.trim();
+  let answer=document.getElementById('inp-answer').value.trim();
+  let startDate=document.getElementById('inp-date').value||today();
+  if(!title||!content||!answer){alert('Please fill in Title, Content, and Answer.');return;}
+  let lessons=getLessons();
+  let id='id_'+Date.now();
+  lessons.push({id,title,subject:subject||'General',content,answer,level:1,added:today(),lastReview:null,nextReview:startDate});
+  saveLessons(lessons);
+  clearForm();
+  alert('✅ Lesson added!');
+}
+function clearForm(){['inp-title','inp-subject','inp-content','inp-answer','inp-date'].forEach(id=>{let el=document.getElementById(id);if(el)el.value='';})}
+
+function renderDashboard(){
+  let lessons=getLessons();
+  let due=lessons.filter(isDue);
+  document.getElementById('s-total').textContent=lessons.length;
+  document.getElementById('s-today').textContent=due.length;
+  document.getElementById('s-mastered').textContent=lessons.filter(l=>l.level===5).length;
+  document.getElementById('s-streak').textContent=getStreak();
+  document.getElementById('daily-tip').textContent=TIPS[new Date().getDay()%TIPS.length];
+
+  let dueEl=document.getElementById('due-list');
+  dueEl.innerHTML=due.length===0?'<div class="empty"><div class="empty-icon">✅</div>No lessons due today!</div>':due.map(l=>lCard(l)).join('');
+
+  let allEl=document.getElementById('all-list');
+  allEl.innerHTML=lessons.length===0?'<div class="empty"><div class="empty-icon">📭</div>No lessons yet. Click "Add Lesson" to begin!</div>':lessons.map(l=>lCard(l)).join('');
+}
+
+function lCard(l){
+  let dueB=isDue(l)?'<span class="badge b-red">⏰ Due Now</span>':`<span class="badge b-blue">Next: ${l.nextReview}</span>`;
+  return `<div class="lesson-item" style="${isDue(l)?'border-left:4px solid #e94560':''}">
+    <div style="font-size:26px">📖</div>
+    <div class="lesson-info">
+      <div class="lesson-title">${l.title}</div>
+      <div class="lesson-sub">${l.subject}</div>
+      <div class="lesson-meta">${levelBadge(l.level)} ${dueB}</div>
+    </div>
+    <button class="btn btn-red btn-sm" onclick="studyOne('${l.id}')">Study</button>
+    <button class="btn btn-gray btn-sm" onclick="delLesson('${l.id}')">✕</button>
+  </div>`;
+}
+
+function delLesson(id){
+  if(!confirm('Delete this lesson?'))return;
+  saveLessons(getLessons().filter(l=>String(l.id)!==String(id)));
+  renderDashboard();
+}
+
+let studyQ=[],studyI=0;
+
+function renderStudy(){
+  studyQ=getLessons().filter(isDue);
+  studyI=0;
+  showCard();
+}
+
+function studyOne(id){
+  id=String(id);
+  studyQ=getLessons().filter(l=>String(l.id)===id);
+  studyI=0;
+  showCard();
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('study').classList.add('active');
+  document.querySelectorAll('.nav button')[2].classList.add('active');
+}
+
+function showCard(){
+  let el=document.getElementById('study-content');
+  if(studyQ.length===0){
+    el.innerHTML='<div class="card" style="text-align:center;padding:60px 30px"><div style="font-size:58px">🎉</div><h2 style="margin-top:14px;color:#27ae60">All Done for Today!</h2><p style="color:#888;margin:10px 0 22px">Come back tomorrow for your next scheduled reviews.</p><button class="btn btn-red" onclick="goPage(\'dashboard\',document.querySelector(\'.nav button\'))">Go to Dashboard</button></div>';
+    return;
+  }
+  if(studyI>=studyQ.length){
+    el.innerHTML=`<div class="card" style="text-align:center;padding:60px 30px"><div style="font-size:58px">✅</div><h2 style="margin-top:14px;color:#27ae60">Session Complete!</h2><p style="color:#888;margin:10px 0 22px">You reviewed ${studyI} lesson(s). Well done!</p><button class="btn btn-red" onclick="goPage('dashboard',document.querySelector('.nav button'))">Go to Dashboard</button></div>`;
+    return;
+  }
+  let l=studyQ[studyI];
+  let pct=(studyI/studyQ.length*100).toFixed(0);
+  el.innerHTML=`
+    <div class="card" style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px">
+        <span style="font-size:13px;color:#888">Lesson ${studyI+1} of ${studyQ.length}</span>
+        <span>${levelBadge(l.level)}</span>
+      </div>
+      <div class="prog-wrap"><div class="prog-bar" style="width:${pct}%"></div></div>
+    </div>
+    <div class="flip-card" onclick="revealAns()">
+      <div class="flip-lbl">📚 ${l.subject}</div>
+      <div class="flip-q">${l.title}</div>
+      <div class="flip-content">${l.content}</div>
+      <div class="flip-ans" id="ans-box">💡 ${l.answer}</div>
+      <div class="flip-hint" id="fhint">👆 Click card to reveal answer</div>
+    </div>
+    <div class="study-btns">
+      <button class="btn btn-gray" onclick="markForgot(${l.id})">❌ I Forgot — Review Again</button>
+      <button class="btn btn-green" onclick="markRemembered(${l.id})">✅ I Remembered!</button>
+    </div>
+    <p style="text-align:center;font-size:12px;color:#aaa">Be honest — it trains your brain better!</p>`;
+}
+
+function revealAns(){
+  document.getElementById('ans-box').classList.add('show');
+  document.getElementById('fhint').textContent='✅ Now decide — did you remember?';
+}
+
+function markRemembered(id){
+  let lessons=getLessons();
+  let l=lessons.find(x=>String(x.id)===String(id));
+  if(l){l.level=Math.min(5,l.level+1);l.lastReview=today();l.nextReview=addDays(INTERVALS[l.level]);}
+  saveLessons(lessons);
+  markStreak();
+  studyI++;showCard();
+}
+
+function markForgot(id){
+  let lessons=getLessons();
+  let l=lessons.find(x=>String(x.id)===String(id));
+  if(l){l.level=1;l.lastReview=today();l.nextReview=addDays(1);}
+  saveLessons(lessons);
+  studyI++;showCard();
+}
+
+/* ── CALENDAR GRID SCHEDULE ── */
+let calYear=new Date().getFullYear(), calMonth=new Date().getMonth();
+
+function calMove(dir){calMonth+=dir;if(calMonth>11){calMonth=0;calYear++;}if(calMonth<0){calMonth=11;calYear--;}renderSchedule();}
+
+function buildDateMap(){
+  let lessons=getLessons();
+  let map={};
+  lessons.forEach(lesson=>{
+    // Due date
+    let nk=lesson.nextReview;
+    if(!map[nk])map[nk]=[];
+    map[nk].push({title:lesson.title,subject:lesson.subject,level:lesson.level,status:'due'});
+    // Projected
+    let intervals=[1,3,7,14,30];
+    let projDate=new Date(nk+'T00:00:00');
+    for(let lv=lesson.level;lv<5;lv++){
+      projDate=new Date(projDate);
+      projDate.setDate(projDate.getDate()+intervals[lv]);
+      let pk=projDate.toISOString().slice(0,10);
+      if(pk!==nk){
+        if(!map[pk])map[pk]=[];
+        map[pk].push({title:lesson.title,subject:lesson.subject,level:lv+1,status:'projected'});
+      }
+    }
+  });
+  return map;
+}
+
+function renderSchedule(){
+  let lessons=getLessons();
+  let gridEl=document.getElementById('cal-grid');
+  let titleEl=document.getElementById('cal-title');
+  let popup=document.getElementById('cal-popup');
+  popup.classList.remove('show');
+
+  const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  titleEl.textContent=MONTHS[calMonth]+' '+calYear;
+
+  let map=buildDateMap();
+  let todayStr=today();
+
+  // Day-of-week headers
+  let html=DAYS.map(d=>`<div class="cal-dow">${d}</div>`).join('');
+
+  // First day of month
+  let firstDay=new Date(calYear,calMonth,1).getDay();
+  let daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+
+  // Empty cells before first day
+  for(let i=0;i<firstDay;i++) html+=`<div class="cal-cell empty"></div>`;
+
+  for(let d=1;d<=daysInMonth;d++){
+    let dk=calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    let isToday=dk===todayStr;
+    let isPast=dk<todayStr;
+    let items=map[dk]||[];
+    let cls='cal-cell'+(isToday?' is-today':'')+(isPast?' is-past':'')+(items.length?' has-items':'');
+    let dayNumHtml=isToday?`<div class="cal-day-num"><span style="background:#e94560;color:white;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px">${d}</span></div>`:`<div class="cal-day-num">${d}</div>`;
+    let dotsHtml='<div class="cal-dot-wrap">';
+    let show=items.slice(0,3);
+    show.forEach(it=>{
+      let lvCls=it.status==='projected'?'proj':'lv'+Math.min(5,Math.max(1,it.level));
+      dotsHtml+=`<div class="cal-dot ${lvCls}">${it.title}</div>`;
+    });
+    if(items.length>3) dotsHtml+=`<div class="cal-more">+${items.length-3} more</div>`;
+    dotsHtml+='</div>';
+    let clickAttr=items.length?`onclick="showPopup('${dk}')"` :'';
+    html+=`<div class="${cls}" ${clickAttr}>${dayNumHtml}${dotsHtml}</div>`;
+  }
+
+  gridEl.innerHTML=html;
+}
+
+function showPopup(dk){
+  let map=buildDateMap();
+  let items=map[dk]||[];
+  let d=new Date(dk+'T00:00:00');
+  document.getElementById('pop-date').textContent='📅 '+d.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  let html=items.map(it=>{
+    let lvCls='lv'+Math.min(5,Math.max(1,it.level));
+    return `<div class="pop-row">📌 <b>${it.title}</b> <span style="color:#888;font-size:12px">${it.subject}</span> <span class="sbadge ${lvCls}">Level ${it.level}</span> ${it.status==='projected'?'<span class="proj-label">(projected)</span>':''}</div>`;
+  }).join('');
+  document.getElementById('pop-list').innerHTML=html;
+  document.getElementById('cal-popup').classList.add('show');
+}
+
+/* ── MANAGE LESSONS ── */
+function renderManage(){
+  let lessons=getLessons();
+  let search=(document.getElementById('manage-search')||{value:''}).value.toLowerCase();
+  let filter=(document.getElementById('manage-filter')||{value:'all'}).value;
+
+  if(filter!=='all') lessons=lessons.filter(l=>l.level==filter);
+  if(search) lessons=lessons.filter(l=>l.title.toLowerCase().includes(search)||l.subject.toLowerCase().includes(search));
+
+  let el=document.getElementById('manage-list');
+  if(!lessons.length){
+    el.innerHTML='<div class="empty"><div class="empty-icon">🔍</div>No lessons found.</div>';
+    return;
+  }
+  el.innerHTML=lessons.map(l=>{
+    let due=isDue(l);
+    return `<div class="lesson-item" style="${due?'border-left:4px solid #e94560':'border-left:4px solid #e0e0e0'}">
+      <div style="font-size:24px">📖</div>
+      <div class="lesson-info">
+        <div class="lesson-title">${l.title}</div>
+        <div class="lesson-sub">${l.subject}</div>
+        <div class="lesson-meta">
+          ${levelBadge(l.level)}
+          ${due?'<span class="badge b-red">⏰ Due Now</span>':`<span class="badge b-blue">Next: ${l.nextReview}</span>`}
+        </div>
+        <div style="font-size:12px;color:#999;margin-top:4px">📝 ${l.content.slice(0,60)}${l.content.length>60?'...':''}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <button class="btn btn-red btn-sm" onclick="openEdit('${l.id}')">✏️ Edit</button>
+        <button class="btn btn-gray btn-sm" onclick="deleteLesson('${l.id}')">🗑 Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function deleteLesson(id){
+  if(!confirm('Delete this lesson?'))return;
+  saveLessons(getLessons().filter(l=>String(l.id)!==String(id)));
+  renderManage();
+  renderDashboard();
+}
+
+function openEdit(id){
+  let l=getLessons().find(x=>String(x.id)===String(id));
+  if(!l)return;
+  document.getElementById('edit-id').value=String(l.id);
+  document.getElementById('edit-title').value=l.title;
+  document.getElementById('edit-subject').value=l.subject;
+  document.getElementById('edit-content').value=l.content;
+  document.getElementById('edit-answer').value=l.answer;
+  document.getElementById('edit-date').value=l.nextReview||today();
+  document.getElementById('edit-modal').style.display='flex';
+}
+
+function saveEdit(){
+  let id=String(document.getElementById('edit-id').value);
+  let lessons=getLessons();
+  let l=lessons.find(x=>String(x.id)===id);
+  if(!l)return;
+  l.title=document.getElementById('edit-title').value.trim()||l.title;
+  l.subject=document.getElementById('edit-subject').value.trim()||l.subject;
+  l.content=document.getElementById('edit-content').value.trim()||l.content;
+  l.answer=document.getElementById('edit-answer').value.trim()||l.answer;
+  l.nextReview=document.getElementById('edit-date').value||l.nextReview;
+  saveLessons(lessons);
+  closeEdit();
+  renderManage();
+  renderDashboard();
+}
+
+function closeEdit(){
+  document.getElementById('edit-modal').style.display='none';
+}
+
+/* ── EXPORT .ICS FOR IPHONE ── */
+function exportICS(){
+  let lessons=getLessons();
+  if(!lessons.length)return alert('No lessons to export!');
+  function pad(n){return n<10?'0'+n:n}
+  function toICSDate(str){
+    let d=new Date(str+'T00:00:00');
+    return d.getFullYear()+''+pad(d.getMonth()+1)+''+pad(d.getDate());
+  }
+
+  let ics='BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Memory System//EN\r\nCALSCALE:GREGORIAN\r\n';
+  let intervals=[1,3,7,14,30];
+  let eventCount=0;
+
+  lessons.forEach(l=>{
+    // Build ALL future review dates from current nextReview onwards
+    let allDates=[];
+    let currentDate=l.nextReview;
+    allDates.push({date:currentDate, level:l.level});
+
+    // Project remaining levels from current level onwards
+    let projDate=new Date(currentDate+'T00:00:00');
+    for(let lv=l.level;lv<5;lv++){
+      projDate=new Date(projDate);
+      projDate.setDate(projDate.getDate()+intervals[lv]);
+      let pk=projDate.toISOString().slice(0,10);
+      allDates.push({date:pk, level:lv+1});
+    }
+
+    // Create a calendar event for each date
+    allDates.forEach((entry,i)=>{
+      let dtstart=toICSDate(entry.date);
+      let levelNames=['','Learning','Remembering','Familiar','Strong','Mastered'];
+      let summary='📚 Review: '+l.title.replace(/[,;]/g,'');
+      let desc='Subject: '+l.subject+' | '+levelNames[entry.level]+' (Level '+entry.level+') | '+l.content.replace(/[,;]/g,'').slice(0,80);
+      eventCount++;
+      ics+='BEGIN:VEVENT\r\n';
+      ics+='UID:'+l.id+'-'+i+'@memorysystem\r\n';
+      ics+='DTSTART;VALUE=DATE:'+dtstart+'\r\n';
+      ics+='DTEND;VALUE=DATE:'+dtstart+'\r\n';
+      ics+='SUMMARY:'+summary+'\r\n';
+      ics+='DESCRIPTION:'+desc+'\r\n';
+      ics+='BEGIN:VALARM\r\nTRIGGER:-PT8H\r\nACTION:DISPLAY\r\nDESCRIPTION:Time to review!\r\nEND:VALARM\r\n';
+      ics+='END:VEVENT\r\n';
+    });
+  });
+
+  ics+='END:VCALENDAR';
+  let blob=new Blob([ics],{type:'text/calendar;charset=utf-8'});
+  let url=URL.createObjectURL(blob);
+  let a=document.createElement('a');
+  a.href=url; a.download='memory_reviews.ics'; a.click();
+  URL.revokeObjectURL(url);
+  alert('✅ Downloaded '+eventCount+' review events for '+lessons.length+' lesson(s)!');
+}
+
+// INIT — auto-login last user or show welcome screen
+let lastUser=localStorage.getItem('srs_lastuser');
+if(lastUser){loadUser(lastUser);}else{showUserScreen();}
+</script>
+</body>
+</html>
